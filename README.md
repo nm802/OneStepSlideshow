@@ -1,12 +1,14 @@
 # OneStepSlideshow
 
-画像ファイルからMicrosoft Powerpointのスライドショーを作ります。
+画像ファイルからPowerpointのスライドショーを作ります。
 
 # Features
 
 Powerpoint標準の機能（フォトアルバム作成機能）はわりとめんどい。
 
 画像を列挙したスライドが一発でほしいときに使えます。
+
+![make_slideshow](https://user-images.githubusercontent.com/11843820/152175003-49949461-422a-46ea-b41a-1800d8143b70.gif)
 
 # Requirement
 
