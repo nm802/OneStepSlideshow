@@ -17,17 +17,18 @@ Powerpoint標準の機能（フォトアルバム作成機能）はわりとめ�
 # Installation
 
 ```bash
-pip install python-pptx, Pillow
+pip install python-pptx Pillow
 ```
 
 # Usage
 
 #### python実行環境の準備
-venvディレクトリ内に仮想環境ある前提の.batファイルになっています。
+Pythonにパスが通っている前提の.batファイルになっています。
+
+仮想環境を使用される場合は，make_slideshow.batファイル内コメントアウトされた次の行のコメントアウトを外すなどして仮想環境のactivationを行ってください。
 ```make_slideshow.bat
-call "venv\Scripts\activate.bat"
+rem call "venv\Scripts\activate.bat"
 ```
-make_slideshow.bat 内実行環境を適宜修正してください。
 
 #### 右クリックメニューに入れる 
 「ファイル名を指定して実行」で「shell:sendto」と入力し，出てきたフォルダにmake_slideshow.batのショートカットを入れる。
