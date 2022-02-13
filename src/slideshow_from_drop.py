@@ -59,43 +59,47 @@ def add_filename(slide: Slides, file_name: str, slide_shape: dict):
     return slide
 
 
-def make_slideshow(img_file_paths: list, slide_width: int = 9144000, slide_height: int = 6858000):
+def make_slideshow(img_file_paths: list, slide_aspect_ratio: float = 4 / 3):
     """
-    4:3 (default) 9144000x6858000, 16:9 12193200x6858000
+    4:3 (default) 9144000x6858000, 16:9 9144000x5143680
+    Unit: English Metric Units = 1/360000 of centimeter
+    Width is always 25.4 cm = 25.4 x 360000 EMU = 9144000 EMU.
     Args:
-        slide_width:
-        slide_height:
+        img_file_paths: list of image file paths (full path)
+        slide_aspect_ratio: slide width/height
 
     Returns:
+        No returns.
 
     """
 
-    # スライドオブジェクトの定義
+    # region Check Input
+    if len(img_file_paths) == 0 or type(img_file_paths) != list:
+        print('no image file included. valid extensions: png/jpg/jpeg/bmp only.')
+        return
+    # endregion
+
+    # region Initialize: Make Slide object, Set output filename
+    slide_width = 9144000
+    slide_height = int(slide_width / slide_aspect_ratio)  # 6858000
     ppt = Presentation()
-    # スライドサイズの指定
     ppt.slide_width = slide_width
     ppt.slide_height = slide_height
-
-    if len(img_file_paths) == 0 or type(img_file_paths) != list:
-        print('no image file included. valid extentions: png/jpg/jpeg/bmp only.')
-        return
-
-    # 昇順にソート（この順番でスライドに貼り付けられる）
-    img_file_paths.sort()  # 昇順にsort
     output_dir = os.path.dirname(img_file_paths[0])
-    print('dirname = ' + output_dir)
+    print('Output .pptx file dir = ' + output_dir)
+    output_file_name = output_dir + '/slideshow_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + '.pptx'
+    # endregion
 
     for img_path in img_file_paths:
         slide = add_slide(ppt)
         add_picture(slide, img_path, {'width': slide_width, 'height': slide_height})
         add_filename(slide, os.path.basename(img_path), {'width': slide_width, 'height': slide_height})
 
-    # pptxファイルを出力する
-    output_file_name = output_dir + '/slideshow_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + '.pptx'
-    print('output file = ' + output_file_name)
+    # save .pptx file
     ppt.save(output_file_name)
 
 
 if __name__ == '__main__':
     img_file_paths = [name for name in sys.argv if name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
+    #img_file_paths.sort()  # 昇順にsort
     make_slideshow(img_file_paths)
