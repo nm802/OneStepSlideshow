@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import datetime
@@ -8,6 +9,44 @@ from pptx.util import Pt
 from pptx.enum.text import PP_PARAGRAPH_ALIGNMENT
 from pptx.dml.color import RGBColor
 from pptx.slide import Slides
+
+
+class Rectangle:
+    def __init__(self, width, aspect_ratio):
+        self.width = width
+        self.aspect_ratio = aspect_ratio
+        self.height = width / aspect_ratio
+
+    def fit(self, target_rect: Rectangle) -> None:
+        """
+        Reset width and height to fit the target rectangle.
+        Args:
+            target_rect: Target Rectangle class instance
+
+        Returns: Rectangle class instance after resize.
+        """
+        if self.aspect_ratio > target_rect.aspect_ratio:  # 横長
+            self.width = target_rect.width
+            self.height = self.width / self.aspect_ratio
+        else:  # 縦長
+            self.height = target_rect.height
+            self.width = self.aspect_ratio * self.height
+
+    def fill(self, target_rect: Rectangle) -> None:
+        """
+        Reset width and height to fill the target rectangle.
+        Args:
+            target_rect: Target Rectangle class instance
+
+        Returns: Rectangle class instance after resize.
+
+        """
+        if self.aspect_ratio > target_rect.aspect_ratio:  # 横長
+            self.height = target_rect.height
+            self.width = self.aspect_ratio * self.height
+        else:  # 縦長
+            self.width = target_rect.width
+            self.height = self.width / self.aspect_ratio
 
 
 def add_slide(prs: Presentation()) -> Slides:
