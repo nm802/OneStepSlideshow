@@ -58,14 +58,10 @@ def add_slide(prs: Presentation()) -> Slides:
     return slide
 
 
-def add_picture_fill(img_path: str, slide, grid_left, grid_top, grid_shape: Rectangle, img_shape: Rectangle) -> typing.NoReturn:
+def add_picture_fill(img_path: str, slide, left, top, grid_shape: Rectangle, img_shape: Rectangle) -> typing.NoReturn:
     """
     画像を(中央crop後に指定位置にくるよう)addした後，gridサイズにcropする
     """
-    img_shape.fill(grid_shape)
-    left = grid_left + ((grid_shape.width - img_shape.width) / 2)
-    top = grid_top + ((grid_shape.height - img_shape.height) / 2)
-
     crop = {'H': 0, 'V': 0}
     # fillモードの場合，画像のほうが横または縦のどちらかがgridより大きい
     if img_shape.width > grid_shape.width:
@@ -89,13 +85,10 @@ def add_picture_fill(img_path: str, slide, grid_left, grid_top, grid_shape: Rect
     shape.height = grid_shape.height
 
 
-def add_picture_fit(img_path: str, slide, grid_left, grid_top, grid_shape: Rectangle, img_shape: Rectangle) -> typing.NoReturn:
+def add_picture_fit(img_path: str, slide, left, top, grid_shape: Rectangle, img_shape: Rectangle) -> typing.NoReturn:
     """
     画像を(中央crop後に指定位置にくるよう)addした後，gridサイズにcropする
     """
-    img_shape.fit(grid_shape)
-    left = grid_left + ((grid_shape.width - img_shape.width) / 2)
-    top = grid_top + ((grid_shape.height - img_shape.height) / 2)
     add = {'H': 0, 'V': 0}
     if img_shape.width < grid_shape.width:
         add_width = (grid_shape.width - img_shape.width) / 2
@@ -160,45 +153,50 @@ def make_slideshow(img_file_paths: list, slide_aspect_ratio: float = 4 / 3, grid
         return
     # endregion
 
-    # region Initialize: Make Rectangle object for slides
+    # region Initialize Grid
     slide_shape = Rectangle(9144000, 9144000 / slide_aspect_ratio)
     # Generate presentation object
     prs = Presentation()
     prs.slide_width = int(slide_shape.width)
     prs.slide_height = int(slide_shape.height)
-    # Set output params
-    output_dir = os.path.dirname(img_file_paths[0])
-    print('Output .pptx file dir = ' + output_dir)
-    output_file_name = output_dir + '/slideshow_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + '.pptx'
-    # Calculate image size
-    qty_per_a_slide = int(grid_definition[0]) * int(grid_definition[1])
+    # Calculate grid size/number
     grid_shape = Rectangle(slide_shape.width / grid_definition[1], slide_shape.height / grid_definition[0])
+    qty_per_a_slide = int(grid_definition[0]) * int(grid_definition[1])
     # endregion
 
     for i, img_path in enumerate(img_file_paths):
         im = Image.open(img_path)
         im_width, im_height = im.size
         img_shape = Rectangle(im_width, im_height)
-        # img_shape Rectangleオブジェクトのパラメータを目標の数値に変換
+        # img_shape Rectangleオブジェクトのfitまたはfillメソッドの実行
+        getattr(img_shape, mode)(grid_shape)
 
         if i % qty_per_a_slide == 0:
             slide = add_slide(prs)
         position = i % qty_per_a_slide
 
-        # グリッドの左上座標を計算
+        # グリッドの左上座標
         grid_left = grid_shape.width * (position % grid_definition[1])
         grid_top = grid_shape.height * int(position / grid_definition[1])
+        left = grid_left + ((grid_shape.width - img_shape.width) / 2)
+        top = grid_top + ((grid_shape.height - img_shape.height) / 2)
 
         # 画像をスライドに追加
-        add_picture_fill(img_path, slide, grid_left, grid_top, grid_shape, img_shape)
+        if mode == 'fit':
+            add_picture_fit(img_path, slide, left, top, grid_shape, img_shape)
+        else:
+            add_picture_fill(img_path, slide, left, top, grid_shape, img_shape)
         add_filename(os.path.basename(img_path), slide, grid_left, grid_top, grid_shape)
 
     # save .pptx file
+    output_dir = os.path.dirname(img_file_paths[0])
+    print('Output .pptx file dir = ' + output_dir)
+    output_file_name = output_dir + '/slideshow_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + '.pptx'
     prs.save(output_file_name)
 
 
 if __name__ == '__main__':
-    # コマンドライン引数として
+    # コマンドライン引数として以下渡す
     # args[0]: slideshow_from_drop.py (このファイルの名前)
     # args[1]: 0 or 1; 0 -> slide_aspect_ratio = 4 / 3, 1 -> slide_aspect_ratio = 16 / 9
     # args[2]: row number of grid
@@ -219,7 +217,7 @@ if __name__ == '__main__':
         print('Arg 1 is wrong value. Value = ' + args[1])
         sys.exit()
 
-    grid_definition = (int(args[2]),int(args[3]))
+    grid_definition = (int(args[2]), int(args[3]))
 
     if int(args[4]) == 0:
         mode = 'fill'
@@ -230,6 +228,5 @@ if __name__ == '__main__':
         sys.exit()
 
     img_file_paths = [name for name in args[5:] if name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
-    #img_file_paths.sort()  # 昇順にsort
 
     make_slideshow(img_file_paths, slide_aspect_ratio=slide_aspect_ratio, grid_definition=grid_definition, mode=mode)
