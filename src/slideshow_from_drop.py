@@ -58,12 +58,15 @@ def add_slide(prs: Presentation()) -> Slides:
     return slide
 
 
-def add_picture(img_path: str, slide, left, top, grid_shape: Rectangle, img_shape: Rectangle) -> typing.NoReturn:
+def add_picture_fill(img_path: str, slide, grid_left, grid_top, grid_shape: Rectangle, img_shape: Rectangle) -> typing.NoReturn:
     """
     画像を(中央crop後に指定位置にくるよう)addした後，gridサイズにcropする
     """
+    img_shape.fill(grid_shape)
+    left = grid_left + ((grid_shape.width - img_shape.width) / 2)
+    top = grid_top + ((grid_shape.height - img_shape.height) / 2)
+
     crop = {'H': 0, 'V': 0}
-    add = {'H': 0, 'V': 0}
     # fillモードの場合，画像のほうが横または縦のどちらかがgridより大きい
     if img_shape.width > grid_shape.width:
         trim_width = (img_shape.width - grid_shape.width) / 2
@@ -73,33 +76,43 @@ def add_picture(img_path: str, slide, left, top, grid_shape: Rectangle, img_shap
         trim_width = (img_shape.height - grid_shape.height) / 2
         top = top + trim_width
         crop['V'] = trim_width / img_shape.height
-    else:  # fitモード
-        if img_shape.width < grid_shape.width:
-            add_width = (grid_shape.width - img_shape.width) / 2
-            left = left - add_width
-            add['H'] = - add_width / img_shape.width
-        else:
-            add_width = (grid_shape.height - img_shape.height) / 2
-            top = top - add_width
-            add['V'] = - add_width / img_shape.height
 
     # add_shape
     shape = slide.shapes.add_picture(img_path, left, top, width=img_shape.width)
 
     # crop
-    if crop['V'] != 0:
-        shape.crop_top = crop['V']
-        shape.crop_bottom = crop['V']
-    if crop['H'] != 0:
-        shape.crop_left = crop['H']
-        shape.crop_right = crop['H']
-    if add['V'] != 0:
-        shape.crop_top = add['V']
-        shape.crop_bottom = add['V']
-    if add['H'] != 0:
-        shape.crop_left = add['H']
-        shape.crop_right = add['H']
+    shape.crop_top = crop['V']
+    shape.crop_bottom = crop['V']
+    shape.crop_left = crop['H']
+    shape.crop_right = crop['H']
+    shape.width = grid_shape.width
+    shape.height = grid_shape.height
 
+
+def add_picture_fit(img_path: str, slide, grid_left, grid_top, grid_shape: Rectangle, img_shape: Rectangle) -> typing.NoReturn:
+    """
+    画像を(中央crop後に指定位置にくるよう)addした後，gridサイズにcropする
+    """
+    img_shape.fit(grid_shape)
+    left = grid_left + ((grid_shape.width - img_shape.width) / 2)
+    top = grid_top + ((grid_shape.height - img_shape.height) / 2)
+    add = {'H': 0, 'V': 0}
+    if img_shape.width < grid_shape.width:
+        add_width = (grid_shape.width - img_shape.width) / 2
+        left = left - add_width
+        add['H'] = - add_width / img_shape.width
+    else:
+        add_width = (grid_shape.height - img_shape.height) / 2
+        top = top - add_width
+        add['V'] = - add_width / img_shape.height
+
+    # add_shape
+    shape = slide.shapes.add_picture(img_path, left, top, width=img_shape.width)
+
+    shape.crop_top = add['V']
+    shape.crop_bottom = add['V']
+    shape.crop_left = add['H']
+    shape.crop_right = add['H']
     shape.width = grid_shape.width
     shape.height = grid_shape.height
 
@@ -167,10 +180,6 @@ def make_slideshow(img_file_paths: list, slide_aspect_ratio: float = 4 / 3, grid
         im_width, im_height = im.size
         img_shape = Rectangle(im_width, im_height)
         # img_shape Rectangleオブジェクトのパラメータを目標の数値に変換
-        if mode == 'fill':
-            img_shape.fill(grid_shape)
-        elif mode == 'fit':
-            img_shape.fit(grid_shape)
 
         if i % qty_per_a_slide == 0:
             slide = add_slide(prs)
@@ -179,11 +188,9 @@ def make_slideshow(img_file_paths: list, slide_aspect_ratio: float = 4 / 3, grid
         # グリッドの左上座標を計算
         grid_left = grid_shape.width * (position % grid_definition[1])
         grid_top = grid_shape.height * int(position / grid_definition[1])
-        left = grid_left + ((grid_shape.width - img_shape.width) / 2)
-        top = grid_top + ((grid_shape.height - img_shape.height) / 2)
 
         # 画像をスライドに追加
-        add_picture(img_path, slide, left, top, grid_shape, img_shape)
+        add_picture_fill(img_path, slide, grid_left, grid_top, grid_shape, img_shape)
         add_filename(os.path.basename(img_path), slide, grid_left, grid_top, grid_shape)
 
     # save .pptx file
