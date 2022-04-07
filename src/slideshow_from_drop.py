@@ -128,7 +128,7 @@ def add_filename(file_name: str, slide: Slides, left, top, grid_shape: Rectangle
 
 
 def make_slideshow(img_file_paths: list, slide_aspect_ratio: float = 4 / 3, grid_definition: tuple = (1, 1),
-                   mode: str = 'fill'):
+                   mode: str = 'fill', with_filename: bool = True):
     """
     4:3 (default) 9144000x6858000, 16:9 9144000x5143680
     Unit: English Metric Units = 1/360000 of centimeter
@@ -186,7 +186,10 @@ def make_slideshow(img_file_paths: list, slide_aspect_ratio: float = 4 / 3, grid
             add_picture_fit(img_path, slide, left, top, grid_shape, img_shape)
         else:
             add_picture_fill(img_path, slide, left, top, grid_shape, img_shape)
-        add_filename(os.path.basename(img_path), slide, grid_left, grid_top, grid_shape)
+
+        # ファイル名をスライドに追加
+        if with_filename:
+            add_filename(os.path.basename(img_path), slide, grid_left, grid_top, grid_shape)
 
     # save .pptx file
     output_dir = os.path.dirname(img_file_paths[0])
@@ -202,10 +205,11 @@ if __name__ == '__main__':
     # args[2]: row number of grid
     # args[3]: column number of grid
     # args[4]: 0 or 1; 0 -> mode = 'fill', 1 -> mode = 'fit'
-    # args[5]~: target file paths
+    # args[5]: 0 or 1; 0 -> with_filename = True, 1 -> with_filename = False
+    # args[6]~: target file paths
 
     args = sys.argv
-    if len(args) < 5:
+    if len(args) < 6:
         print('Too short args. Confirm args definition.')
         sys.exit()
 
@@ -224,9 +228,18 @@ if __name__ == '__main__':
     elif int(args[4]) == 1:
         mode = 'fit'
     else:
-        print('Arg 4 is wrong value. Value = ' + args[1])
+        print('Arg 4 is wrong value. Value = ' + args[4])
+        sys.exit()
+
+    if int(args[5]) == 0:
+        with_filename = True
+    elif int(args[5]) == 1:
+        with_filename = False
+    else:
+        print('Arg 5 is wrong value. Value = ' + args[5])
         sys.exit()
 
     img_file_paths = [name for name in args[5:] if name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
 
-    make_slideshow(img_file_paths, slide_aspect_ratio=slide_aspect_ratio, grid_definition=grid_definition, mode=mode)
+    make_slideshow(img_file_paths, slide_aspect_ratio=slide_aspect_ratio, grid_definition=grid_definition, mode=mode,
+                   with_filename=with_filename)

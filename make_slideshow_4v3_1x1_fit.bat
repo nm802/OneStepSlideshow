@@ -4,5 +4,6 @@ cd /d %~dp0
 @rem args[2]: row number of grid
 @rem args[3]: column number of grid
 @rem args[4]: 0 or 1; 0 -> mode = 'fill', 1 -> mode = 'fit'
-Python src\slideshow_from_drop.py 0 1 1 1 %*
+@rem args[5]: 0 or 1; ; 0 -> with_filename = True, 1 -> with_filename = False
+Python src\slideshow_from_drop.py 0 1 1 1 0 %*
 @rem pause
