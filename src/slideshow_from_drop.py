@@ -5,7 +5,6 @@ import datetime
 import typing
 
 from PIL import Image
-import collections.abc
 from pptx import Presentation
 from pptx.util import Pt
 from pptx.enum.text import PP_PARAGRAPH_ALIGNMENT
@@ -116,8 +115,6 @@ def add_filename(file_name: str, slide: Slides, left, top, grid_shape: Rectangle
     """
 
     text_box = slide.shapes.add_textbox(left, top, grid_shape.width, Pt(16))
-    # text_box.fill.solid()
-    # text_box.fill.fore_color.rgb = RGBColor(0, 0, 0)
     text_frame = text_box.text_frame
     text_frame.text = file_name
     text_frame.paragraphs[0].font.size = Pt(14)
@@ -127,17 +124,18 @@ def add_filename(file_name: str, slide: Slides, left, top, grid_shape: Rectangle
     return slide
 
 
-def make_slideshow(img_file_paths: list, slide_aspect_ratio: float = 4 / 3, grid_definition: tuple = (1, 1),
-                   mode: str = 'fill', with_filename: bool = True):
+def make_slideshow(_img_file_paths: list, _slide_aspect_ratio: float = 4 / 3, _grid_definition: tuple = (1, 1),
+                   _mode: str = 'fill', _with_filename: bool = True):
     """
     4:3 (default) 9144000x6858000, 16:9 9144000x5143680
     Unit: English Metric Units = 1/360000 of centimeter
     Width is always 25.4 cm = 25.4 x 360000 EMU = 9144000 EMU.
     Args:
-        img_file_paths: list of image file paths (full path)
-        slide_aspect_ratio: slide width/height
-        grid_definition: image grid numbers as tuple (row, column)
-        mode: 'fill' or 'fit'. images cropped in fill mode.
+        _img_file_paths: list of image file paths (full path)
+        _slide_aspect_ratio: slide width/height
+        _grid_definition: image grid numbers as tuple (row, column)
+        _mode: 'fill' or 'fit'. images cropped in fill mode.
+        _with_filename: True to add filename on each image.
 
     Returns:
         No returns.
@@ -145,67 +143,91 @@ def make_slideshow(img_file_paths: list, slide_aspect_ratio: float = 4 / 3, grid
     """
 
     # region Check Input
-    if len(img_file_paths) == 0 or type(img_file_paths) != list:
+    if (len(_img_file_paths) == 0) or (type(_img_file_paths) is not list):
         print('no image file included. valid extensions: png/jpg/jpeg/bmp only.')
         return
-    if (mode != 'fit') and (mode != 'fill'):
-        print('invalid mode thrown. mode must be "fill" or "fit".')
+    if (_mode != 'fit') and (_mode != 'fill'):
+        print('invalid _mode thrown. _mode must be "fill" or "fit".')
         return
     # endregion
 
     # region Initialize Grid
-    slide_shape = Rectangle(9144000, 9144000 / slide_aspect_ratio)
+    slide_shape = Rectangle(9144000, 9144000 / _slide_aspect_ratio)
     # Generate presentation object
     prs = Presentation()
     prs.slide_width = int(slide_shape.width)
     prs.slide_height = int(slide_shape.height)
     # Calculate grid size/number
-    grid_shape = Rectangle(slide_shape.width / grid_definition[1], slide_shape.height / grid_definition[0])
-    qty_per_a_slide = int(grid_definition[0]) * int(grid_definition[1])
+    grid_shape = Rectangle(slide_shape.width / _grid_definition[1], slide_shape.height / _grid_definition[0])
+    qty_per_a_slide = int(_grid_definition[0]) * int(_grid_definition[1])
     # endregion
 
-    for i, img_path in enumerate(img_file_paths):
+    for i, img_path in enumerate(_img_file_paths):
         im = Image.open(img_path)
         im_width, im_height = im.size
         img_shape = Rectangle(im_width, im_height)
         # img_shape Rectangleオブジェクトのfitまたはfillメソッドの実行
-        getattr(img_shape, mode)(grid_shape)
+        getattr(img_shape, _mode)(grid_shape)
 
         if i % qty_per_a_slide == 0:
             slide = add_slide(prs)
         position = i % qty_per_a_slide
 
         # グリッドの左上座標
-        grid_left = grid_shape.width * (position % grid_definition[1])
-        grid_top = grid_shape.height * int(position / grid_definition[1])
+        grid_left = grid_shape.width * (position % _grid_definition[1])
+        grid_top = grid_shape.height * int(position / _grid_definition[1])
         left = grid_left + ((grid_shape.width - img_shape.width) / 2)
         top = grid_top + ((grid_shape.height - img_shape.height) / 2)
 
         # 画像をスライドに追加
-        if mode == 'fit':
+        if _mode == 'fit':
             add_picture_fit(img_path, slide, left, top, grid_shape, img_shape)
         else:
             add_picture_fill(img_path, slide, left, top, grid_shape, img_shape)
 
         # ファイル名をスライドに追加
-        if with_filename:
+        if _with_filename:
             add_filename(os.path.basename(img_path), slide, grid_left, grid_top, grid_shape)
 
     # save .pptx file
-    output_dir = os.path.dirname(img_file_paths[0])
+    output_dir = os.path.dirname(_img_file_paths[0])
     print('Output .pptx file dir = ' + output_dir)
     output_file_name = output_dir + '/slideshow_' + datetime.datetime.now().strftime('%Y%m%d_%H%M%S') + '.pptx'
     prs.save(output_file_name)
 
 
+def filepath_list(_paths: list) -> list:
+    """
+    与えられたファイルパスのリストから画像ファイルだけを返す。
+    ディレクトリが含まれていたらその中のファイルを再帰的に取得する。
+
+    Args:
+        _paths: ファイルパスのリスト。batファイルから与えられることを想定
+
+    Returns:
+        画像ファイルパスのリスト
+    """
+    # return
+    _img_file_paths = list()
+
+    # filter
+    for p in _paths:
+        if os.path.exists(p) and p.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+            _img_file_paths.append(p)
+        elif os.path.isdir(p):
+            _img_file_paths += filepath_list([os.path.join(p, f) for f in os.listdir(p)])
+
+    return _img_file_paths
+
+
 if __name__ == '__main__':
     # コマンドライン引数として以下渡す
     # args[0]: slideshow_from_drop.py (このファイルの名前)
-    # args[1]: 0 or 1; 0 -> slide_aspect_ratio = 4 / 3, 1 -> slide_aspect_ratio = 16 / 9
+    # args[1]: 0 or 1; 0 -> _slide_aspect_ratio = 4 / 3, 1 -> _slide_aspect_ratio = 16 / 9
     # args[2]: row number of grid
     # args[3]: column number of grid
-    # args[4]: 0 or 1; 0 -> mode = 'fill', 1 -> mode = 'fit'
-    # args[5]: 0 or 1; 0 -> with_filename = True, 1 -> with_filename = False
+    # args[4]: 0 or 1; 0 -> _mode = 'fill', 1 -> _mode = 'fit'
+    # args[5]: y or n; y -> _with_filename = True, n -> _with_filename = False
     # args[6]~: target file paths
 
     args = sys.argv
@@ -231,15 +253,12 @@ if __name__ == '__main__':
         print('Arg 4 is wrong value. Value = ' + args[4])
         sys.exit()
 
-    if int(args[5]) == 0:
-        with_filename = True
-    elif int(args[5]) == 1:
+    if str(args[5]).lower() == 'n':
         with_filename = False
     else:
-        print('Arg 5 is wrong value. Value = ' + args[5])
-        sys.exit()
+        with_filename = True
 
-    img_file_paths = [name for name in args[5:] if name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
+    img_file_paths = filepath_list(args[6:])
 
-    make_slideshow(img_file_paths, slide_aspect_ratio=slide_aspect_ratio, grid_definition=grid_definition, mode=mode,
-                   with_filename=with_filename)
+    make_slideshow(img_file_paths, _slide_aspect_ratio=slide_aspect_ratio, _grid_definition=grid_definition, _mode=mode,
+                   _with_filename=with_filename)
