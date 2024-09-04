@@ -224,10 +224,10 @@ if __name__ == '__main__':
     # コマンドライン引数として以下渡す
     # args[0]: slideshow_from_drop.py (このファイルの名前)
     # args[1]: 0 or 1; 0 -> _slide_aspect_ratio = 4 / 3, 1 -> _slide_aspect_ratio = 16 / 9
-    # args[2]: row number of grid
-    # args[3]: column number of grid
+    # args[2]: row number of grid. Prompted if args[2] == 0
+    # args[3]: column number of grid. Prompted if args[2] == 0
     # args[4]: 0 or 1; 0 -> _mode = 'fill', 1 -> _mode = 'fit'
-    # args[5]: y or n; y -> _with_filename = True, n -> _with_filename = False
+    # args[5]: y or n; y -> _with_filename = True, n -> _with_filename = False. Prompted if args[5] == 0
     # args[6]~: target file paths
 
     args = sys.argv
@@ -243,7 +243,12 @@ if __name__ == '__main__':
         print('Arg 1 is wrong value. Value = ' + args[1])
         sys.exit()
 
-    grid_definition = (int(args[2]), int(args[3]))
+    if int(args[2]) == 0:
+        r = input('Enter Grid Row Number: ')
+        c = input('Enter Grid Column Number: ')
+        grid_definition = ((int(r), int(c)))
+    else:
+        grid_definition = (int(args[2]), int(args[3]))
 
     if int(args[4]) == 0:
         mode = 'fill'
@@ -253,7 +258,8 @@ if __name__ == '__main__':
         print('Arg 4 is wrong value. Value = ' + args[4])
         sys.exit()
 
-    if str(args[5]).lower() == 'n':
+    answer = input('With Filename? [y/n]: ') if int(args[5]) == 0 else args[5]
+    if str(answer).lower() == 'n':
         with_filename = False
     else:
         with_filename = True
